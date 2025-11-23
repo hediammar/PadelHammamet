@@ -40,6 +40,11 @@ const BOOKINGS_STORAGE_KEY = 'Padel Hammamet_bookings';
 
 // Load bookings from localStorage
 const loadBookingsFromStorage = (): Booking[] => {
+  // Check if we're in the browser (not SSR)
+  if (typeof window === 'undefined') {
+    return [];
+  }
+  
   try {
     const stored = localStorage.getItem(BOOKINGS_STORAGE_KEY);
     if (stored) {
@@ -53,6 +58,11 @@ const loadBookingsFromStorage = (): Booking[] => {
 
 // Save bookings to localStorage
 const saveBookingsToStorage = (bookings: Booking[]) => {
+  // Check if we're in the browser (not SSR)
+  if (typeof window === 'undefined') {
+    return;
+  }
+  
   try {
     localStorage.setItem(BOOKINGS_STORAGE_KEY, JSON.stringify(bookings));
   } catch (error) {
@@ -61,12 +71,15 @@ const saveBookingsToStorage = (bookings: Booking[]) => {
 };
 
 export const BookingProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize bookings from localStorage
-  const [bookings, setBookings] = useState<Booking[]>(() => {
+  // Initialize bookings from localStorage (only on client-side)
+  const [bookings, setBookings] = useState<Booking[]>([]);
+
+  // Load bookings from storage on mount (client-side only)
+  useEffect(() => {
     const stored = loadBookingsFromStorage();
     console.log('Initial bookings loaded from storage:', stored);
-    return stored;
-  });
+    setBookings(stored);
+  }, []);
   const [guestUsers, setGuestUsers] = useState<GuestUser[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null);

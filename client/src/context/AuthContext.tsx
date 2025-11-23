@@ -25,6 +25,11 @@ const STORAGE_KEY = 'Padel Hammamet_user';
 
 // Load user from localStorage
 const loadUserFromStorage = (): User | null => {
+  // Check if we're in the browser (not SSR)
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -38,6 +43,11 @@ const loadUserFromStorage = (): User | null => {
 
 // Save user to localStorage
 const saveUserToStorage = (user: User | null) => {
+  // Check if we're in the browser (not SSR)
+  if (typeof window === 'undefined') {
+    return;
+  }
+  
   try {
     if (user) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
@@ -50,11 +60,11 @@ const saveUserToStorage = (user: User | null) => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize user from localStorage
-  const [user, setUser] = useState<User | null>(loadUserFromStorage);
+  // Initialize user state (will be loaded from localStorage on mount)
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load user from storage on mount
+  // Load user from storage on mount (client-side only)
   useEffect(() => {
     const storedUser = loadUserFromStorage();
     if (storedUser) {

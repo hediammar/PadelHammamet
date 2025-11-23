@@ -5,14 +5,20 @@ const Loader = () => {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    // Check if we're in the browser (not SSR)
+    if (typeof window === 'undefined') {
+      setIsVisible(false);
+      return;
+    }
+
     // Prevent scrolling during loader
     document.body.style.overflow = 'hidden';
 
-    // Hide loader after animation completes (slightly longer for racket animation)
+    // Hide loader after animation completes
     const timer = setTimeout(() => {
       setIsVisible(false);
       document.body.style.overflow = '';
-    }, 3300);
+    }, 3000);
 
     return () => {
       clearTimeout(timer);
