@@ -10,7 +10,7 @@ interface UpcomingReservationsProps {
 }
 
 const UpcomingReservations = ({ userId }: UpcomingReservationsProps) => {
-  const { getUpcomingBookings, cancelBooking, bookings } = useBooking();
+  const { getUpcomingBookings, cancelBooking } = useBooking();
   const upcomingBookings = getUpcomingBookings(userId);
   const allSlots = generatePadelSlots(8, 23);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);

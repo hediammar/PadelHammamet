@@ -74,41 +74,9 @@ const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
                 <div className="flex flex-col items-center w-full">
                   <GoogleLogin
                     onSuccess={handleGoogleSuccessCallback}
-                    onError={(error) => {
-                      // Handle One Tap specific errors
-                      if (error.error === 'popup_closed_by_user') {
-                        // User closed the popup, no need to show error
-                        return;
-                      }
-                      
-                      // One Tap initialization errors - these can happen if origin isn't configured
-                      if (
-                        error.error === 'idpiframe_initialization_failed' ||
-                        error.type === 'idpiframe_initialization_failed' ||
-                        error.error === 'access_denied'
-                      ) {
-                        console.warn(
-                          'One Tap initialization failed. This usually means:\n' +
-                          '1. The origin (http://localhost:5173) needs to be added to Google Cloud Console\n' +
-                          '2. Wait a few minutes after adding the origin\n' +
-                          '3. Clear browser cache\n\n' +
-                          'The regular sign-in button will still work.'
-                        );
-                        // Don't show alert for One Tap errors - they're expected during setup
-                        return;
-                      }
-                      
-                      console.error('Google login error:', error);
-                      // Only show alert for unexpected errors
-                      if (error.error !== 'popup_blocked') {
-                        alert(
-                          'Failed to sign in with Google.\n\n' +
-                          'Please check:\n' +
-                          '1. Your origin is authorized in Google Cloud Console\n' +
-                          '2. The Client ID is correctly configured\n' +
-                          '3. See GOOGLE_OAUTH_SETUP.md for setup instructions'
-                        );
-                      }
+                    onError={() => {
+                      // Error handling - Google OAuth onError doesn't provide error details
+                      console.error('Google login error occurred');
                     }}
                     useOneTap={true}
                     theme="filled_blue"

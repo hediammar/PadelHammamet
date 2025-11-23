@@ -9,11 +9,7 @@ import { User } from 'lucide-react';
 const Navbar = () => {
   const { user, isAuthenticated } = useAuth();
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const navItems = [
-    
-   
-    
-  ];
+  const navItems: Array<{ label: string; path: string }> = [];
 
   return (
     <>

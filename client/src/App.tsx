@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import { BookingProvider } from './context/BookingContext'
 import Layout from './components/layout/Layout'
 import PageTransition from './components/layout/PageTransition'
+import Loader from './components/layout/Loader'
 import Home from './pages/Home'
 import BookingFlow from './pages/BookingFlow'
 import BookingFlowAlternative from './pages/BookingFlowAlternative'
@@ -44,6 +45,7 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
         <BookingProvider>
+          <Loader />
           <Layout>
             <AppRoutes />
           </Layout>

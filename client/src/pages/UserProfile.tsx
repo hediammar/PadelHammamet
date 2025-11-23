@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { useBooking } from '../context/BookingContext';
 import ProfileCard from '../components/profile/ProfileCard';
 import UpcomingReservations from '../components/profile/UpcomingReservations';
 import ConfirmationModal from '../components/common/ConfirmationModal';
@@ -10,7 +9,6 @@ import { Link } from 'react-router-dom';
 
 const UserProfile = () => {
   const { user, isAuthenticated, handleGoogleSuccess, logout } = useAuth();
-  const { getUpcomingBookings } = useBooking();
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
 
   const handleGoogleSuccessCallback = async (credentialResponse: any) => {
@@ -64,10 +62,9 @@ const UserProfile = () => {
               <div className="flex flex-col items-center space-y-4">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccessCallback}
-                  onError={(error) => {
-                    if (error.error !== 'popup_closed_by_user') {
-                      console.error('Google login error:', error);
-                    }
+                  onError={() => {
+                    // Error handling - Google OAuth onError doesn't provide error details
+                    console.error('Google login error occurred');
                   }}
                   useOneTap={true}
                   theme="filled_blue"

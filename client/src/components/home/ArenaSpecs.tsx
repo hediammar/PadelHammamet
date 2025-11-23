@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Building2, Ruler, Eye, ShoppingBag, Sparkles } from 'lucide-react';
+import { Building2, Ruler, Eye, ShoppingBag } from 'lucide-react';
 
 const specs = [
   {
