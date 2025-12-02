@@ -10,6 +10,7 @@ import BookingFlow from './pages/BookingFlow'
 import BookingFlowAlternative from './pages/BookingFlowAlternative'
 import UserProfile from './pages/UserProfile'
 import Login from './pages/Login'
+import AdminPanel from './pages/AdminPanel'
 
 // Google OAuth Client ID - should be set in environment variables
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
@@ -35,22 +36,39 @@ function AppRoutes() {
         <Route path="/booking-alternative" element={<BookingFlowAlternative />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={<AdminPanel />} />
       </Routes>
     </PageTransition>
   );
 }
 
 function App() {
+  // Only wrap with GoogleOAuthProvider if we have a valid client ID
+  const appContent = (
+    <AuthProvider>
+      <BookingProvider>
+        <Loader />
+        <Layout>
+          <AppRoutes />
+        </Layout>
+      </BookingProvider>
+    </AuthProvider>
+  );
+
+  // If no client ID, render without GoogleOAuthProvider (app will still work, just no Google sign-in)
+  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.trim() === '') {
+    if (typeof window !== 'undefined') {
+      console.warn(
+        '⚠️ Google OAuth Client ID not configured. Google sign-in will not be available.\n' +
+        'Please set VITE_GOOGLE_CLIENT_ID in your Vercel environment variables.'
+      );
+    }
+    return appContent;
+  }
+
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <AuthProvider>
-        <BookingProvider>
-          <Loader />
-          <Layout>
-            <AppRoutes />
-          </Layout>
-        </BookingProvider>
-      </AuthProvider>
+      {appContent}
     </GoogleOAuthProvider>
   )
 }

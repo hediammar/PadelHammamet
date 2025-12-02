@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 
 export interface Booking {
   id: string;
@@ -71,66 +72,227 @@ const saveBookingsToStorage = (bookings: Booking[]) => {
 };
 
 export const BookingProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize bookings from localStorage (only on client-side)
+  // Initialize bookings from Supabase and localStorage
   const [bookings, setBookings] = useState<Booking[]>([]);
-
-  // Load bookings from storage on mount (client-side only)
-  useEffect(() => {
-    const stored = loadBookingsFromStorage();
-    console.log('Initial bookings loaded from storage:', stored);
-    setBookings(stored);
-  }, []);
   const [guestUsers, setGuestUsers] = useState<GuestUser[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(true);
 
-  // Save bookings to localStorage whenever bookings change
+  // Load bookings from Supabase on mount
   useEffect(() => {
-    console.log('Bookings changed, saving to storage:', bookings);
-    saveBookingsToStorage(bookings);
-  }, [bookings]);
+    const loadBookings = async () => {
+      try {
+        // First, try to load from Supabase
+        const { data: supabaseBookings, error } = await supabase
+          .from('reservations')
+          .select('*')
+          .order('date', { ascending: true });
 
-  const createGuestUser = useCallback(async (userData: Omit<GuestUser, 'id' | 'createdAt'>): Promise<string> => {
-    // Check if user already exists by email
-    const existingUser = guestUsers.find((u) => u.email === userData.email);
-    if (existingUser) {
-      return existingUser.id;
-    }
-
-    // Create new guest user
-    const newUser: GuestUser = {
-      ...userData,
-      id: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
+        if (error) {
+          console.error('Error loading bookings from Supabase:', error);
+          // Fallback to localStorage if Supabase fails
+          const stored = loadBookingsFromStorage();
+          setBookings(stored);
+        } else if (supabaseBookings && supabaseBookings.length > 0) {
+          // Map Supabase data to Booking format
+          const mappedBookings: Booking[] = supabaseBookings.map((b: any) => ({
+            id: b.id,
+            courtId: b.court_id,
+            date: b.date,
+            timeSlot: b.time_slot,
+            userId: b.user_id,
+          }));
+          setBookings(mappedBookings);
+          saveBookingsToStorage(mappedBookings);
+        } else {
+          // No Supabase data, try localStorage
+          const stored = loadBookingsFromStorage();
+          setBookings(stored);
+        }
+      } catch (error) {
+        console.error('Error loading bookings:', error);
+        // Fallback to localStorage
+        const stored = loadBookingsFromStorage();
+        setBookings(stored);
+      } finally {
+        setIsLoadingBookings(false);
+      }
     };
 
-    setGuestUsers((prev) => [...prev, newUser]);
+    loadBookings();
 
-    // TODO: Make API call to create user account
-    // await authApi.createGuestUser(newUser);
+    // Subscribe to real-time changes in reservations table
+    const subscription = supabase
+      .channel('reservations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reservations',
+        },
+        async () => {
+          // Reload bookings when changes occur
+          const { data: supabaseBookings } = await supabase
+            .from('reservations')
+            .select('*')
+            .order('date', { ascending: true });
 
-    return newUser.id;
+          if (supabaseBookings) {
+            const mappedBookings: Booking[] = supabaseBookings.map((b: any) => ({
+              id: b.id,
+              courtId: b.court_id,
+              date: b.date,
+              timeSlot: b.time_slot,
+              userId: b.user_id,
+            }));
+            setBookings(mappedBookings);
+            saveBookingsToStorage(mappedBookings);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Save bookings to localStorage whenever bookings change (as backup)
+  useEffect(() => {
+    if (!isLoadingBookings) {
+      saveBookingsToStorage(bookings);
+    }
+  }, [bookings, isLoadingBookings]);
+
+  const createGuestUser = useCallback(async (userData: Omit<GuestUser, 'id' | 'createdAt'>): Promise<string> => {
+    try {
+      // Check if user already exists by email in Supabase
+      const { data: existingUsers } = await supabase
+        .from('guest_users')
+        .select('*')
+        .eq('email', userData.email)
+        .limit(1);
+
+      if (existingUsers && existingUsers.length > 0) {
+        const existingUser = existingUsers[0];
+        const guestUser: GuestUser = {
+          id: existingUser.id,
+          name: existingUser.name,
+          email: existingUser.email,
+          phone: existingUser.phone,
+          createdAt: existingUser.created_at,
+        };
+        setGuestUsers((prev) => {
+          const exists = prev.find((u) => u.id === guestUser.id);
+          if (!exists) return [...prev, guestUser];
+          return prev;
+        });
+        return existingUser.id;
+      }
+
+      // Create new guest user in Supabase
+      const newUser: GuestUser = {
+        ...userData,
+        id: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('guest_users')
+        .insert({
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          created_at: newUser.createdAt,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating guest user in Supabase:', error);
+        // Still return the user ID even if Supabase insert fails
+        setGuestUsers((prev) => [...prev, newUser]);
+        return newUser.id;
+      }
+
+      setGuestUsers((prev) => [...prev, newUser]);
+      return newUser.id;
+    } catch (error) {
+      console.error('Error creating guest user:', error);
+      // Fallback: create user locally
+      const newUser: GuestUser = {
+        ...userData,
+        id: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        createdAt: new Date().toISOString(),
+      };
+      setGuestUsers((prev) => [...prev, newUser]);
+      return newUser.id;
+    }
   }, [guestUsers]);
 
   const createBooking = useCallback(async (booking: Omit<Booking, 'id'>) => {
-    // Generate a simple ID (in production, this would come from the backend)
-    const newBooking: Booking = {
-      ...booking,
-      id: `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    };
-    
-    setBookings((prev) => [...prev, newBooking]);
-    
-    // TODO: Make API call to persist booking
-    // await bookingApi.createBooking(newBooking);
-  }, []);
+    try {
+      // Generate a simple ID
+      const newBooking: Booking = {
+        ...booking,
+        id: `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      };
+
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('reservations')
+        .insert({
+          id: newBooking.id,
+          court_id: newBooking.courtId,
+          date: newBooking.date,
+          time_slot: newBooking.timeSlot,
+          user_id: newBooking.userId,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating booking in Supabase:', error);
+        // Still add to local state even if Supabase insert fails
+        setBookings((prev) => [...prev, newBooking]);
+        saveBookingsToStorage([...bookings, newBooking]);
+        throw error;
+      }
+
+      // Booking will be updated via real-time subscription, but we can also update immediately
+      setBookings((prev) => [...prev, newBooking]);
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      throw error;
+    }
+  }, [bookings]);
 
   const cancelBooking = useCallback(async (bookingId: string) => {
-    setBookings((prev) => prev.filter((booking) => booking.id !== bookingId));
-    
-    // TODO: Make API call to cancel booking
-    // await bookingApi.cancelBooking(bookingId);
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error cancelling booking in Supabase:', error);
+        // Still remove from local state even if Supabase delete fails
+        setBookings((prev) => prev.filter((booking) => booking.id !== bookingId));
+        throw error;
+      }
+
+      // Booking will be updated via real-time subscription, but we can also update immediately
+      setBookings((prev) => prev.filter((booking) => booking.id !== bookingId));
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      throw error;
+    }
   }, []);
 
   const getUpcomingBookings = useCallback((userId?: string): Booking[] => {

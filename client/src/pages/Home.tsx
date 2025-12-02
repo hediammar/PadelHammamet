@@ -65,8 +65,8 @@ const Home = () => {
       {/* Fidelity Explainer */}
       <FidelityExplainer />
 
-      {/* Services & Academy */}
-      <ServicesAcademy />
+      {/* Services & Academy 
+      <ServicesAcademy />*/}
 
       {/* Live Leaderboard */}
       <Leaderboard />

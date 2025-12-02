@@ -96,6 +96,16 @@ const Navbar = () => {
                 <InteractiveHoverButton text="Reserve" />
               </Link>
               
+              {/* Admin Link - Desktop */}
+              {isAuthenticated && user && user.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="px-4 py-2 rounded-xl glass hover:bg-white/10 transition-all duration-200 text-sm font-medium text-white/80"
+                >
+                  Admin
+                </Link>
+              )}
+              
               {/* Profile Button - Desktop */}
               {isAuthenticated && user ? (
                 <Link
@@ -105,12 +115,12 @@ const Navbar = () => {
                   {user.picture && (
                     <img
                       src={user.picture}
-                      alt={user.name}
+                      alt={user.username || user.name}
                       className="w-8 h-8 rounded-full border border-[var(--color-padel-green)]"
                     />
                   )}
                   <span className="text-sm font-medium text-white/80">
-                    {user.name.split(' ')[0]}
+                  {user.username || user.name}
                   </span>
                 </Link>
               ) : (

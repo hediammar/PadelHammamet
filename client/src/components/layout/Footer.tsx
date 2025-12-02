@@ -112,9 +112,26 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <p className="text-white/40 text-sm">
-            © {currentYear} Padel Hammamet. All rights reserved.
-          </p>
+          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6">
+            <p className="text-white/40 text-sm">
+              © {currentYear} Padel Hammamet. All rights reserved.
+            </p>
+            <p className="text-white/40 text-sm flex items-center gap-2">
+              Developed by{' '}
+              <a
+                href="https://www.orca-consulting.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <img
+                  src="https://res.cloudinary.com/dqz6vxjgg/image/upload/v1764692267/OrcaLogo_o1vm4l.png"
+                  alt="Orca Consulting Logo"
+                  className="h-[40px]"
+                />
+              </a>
+            </p>
+          </div>
           <div className="flex items-center space-x-6">
             <a
               href="#"
