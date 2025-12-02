@@ -7,7 +7,7 @@ import { ReservationDetailModal } from '../components/admin/ReservationDetailMod
 import { AdminAuthGuard } from '../components/admin/AdminAuthGuard';
 import { supabase } from '../lib/supabase';
 import { Calendar, Users, Plus } from 'lucide-react';
-import { isSameDay, parse, format } from 'date-fns';
+import { parse, format } from 'date-fns';
 import { generatePadelSlots, formatDateLocal } from '../utils/dateHelpers';
 
 type Tab = 'calendar' | 'players';

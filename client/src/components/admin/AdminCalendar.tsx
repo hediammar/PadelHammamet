@@ -18,7 +18,6 @@ import {
   ChevronLeft,
   ChevronRight,
   PlusCircle,
-  Search,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 

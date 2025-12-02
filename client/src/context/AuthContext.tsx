@@ -319,7 +319,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let username = '';
       
       if (fullName) {
-        const nameParts = fullName.trim().split(/\s+/).filter(part => part.length > 0);
+        const nameParts = fullName.trim().split(/\s+/).filter((part: string) => part.length > 0);
         if (nameParts.length >= 2) {
           // Concatenate first + last name
           const firstName = nameParts[0].toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -380,7 +380,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // The auth state change listener will handle setting the user when they return
   const handleGoogleLogin = useCallback(async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}${window.location.pathname}`,

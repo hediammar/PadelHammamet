@@ -11,7 +11,7 @@ interface SignInModalProps {
 }
 
 const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
-  const { loginWithGoogle, isLoading, isAuthenticated } = useAuth();
+  const { loginWithGoogle, isAuthenticated } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
 
   // Close modal when user successfully authenticates

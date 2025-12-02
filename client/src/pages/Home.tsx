@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import ScrollExpandHero from '../components/home/ScrollExpandHero';
 import ArenaSpecs from '../components/home/ArenaSpecs';
 import FidelityExplainer from '../components/home/FidelityExplainer';
-import ServicesAcademy from '../components/home/ServicesAcademy';
 import Leaderboard from '../components/home/Leaderboard';
 import { LogoCarousel } from '../components/ui/logo-carousel';
 import heroVideo from '../assets/file.mp4';

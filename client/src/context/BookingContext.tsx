@@ -200,7 +200,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
         createdAt: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('guest_users')
         .insert({
           id: newUser.id,
@@ -243,7 +243,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
       };
 
       // Save to Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('reservations')
         .insert({
           id: newBooking.id,

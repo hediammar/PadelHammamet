@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Shield, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
