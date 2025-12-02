@@ -123,7 +123,7 @@ const UserProfile = () => {
           <ProfileCard 
             userId={user.id} 
             userName={user.username || user.name}
-            userEmail={`${user.phone_prefix}${user.phone_number}` || user.email}
+            userEmail={user.phone_number || user.email}
             userPicture={user.picture}
           />
 
