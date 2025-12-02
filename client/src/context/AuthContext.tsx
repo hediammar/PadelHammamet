@@ -167,6 +167,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           console.log('Session found, restoring user:', session.user.id);
           try {
+            // Ensure Google user profile exists (for both new and existing users)
+            if (session.user.app_metadata?.provider === 'google') {
+              await ensureGoogleUserProfile(session.user);
+            }
+            
             const appUser = await mapSupabaseUserToAppUser(session.user);
             if (appUser && isMounted) {
               setUser(appUser);
@@ -320,17 +325,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Ensure Google user profile exists with proper username from first + last name
   const ensureGoogleUserProfile = useCallback(async (supabaseUser: SupabaseUser) => {
     try {
-      // Check if profile already exists with username
+      // Check if profile already exists
       const { data: existingProfile } = await supabase
         .from('users')
-        .select('username')
+        .select('id, username')
         .eq('id', supabaseUser.id)
         .maybeSingle();
 
+      // If profile exists and has a username, we're done
       if (existingProfile?.username) {
-        // Profile already exists with username
+        console.log('Google user profile already exists:', existingProfile.username);
         return;
       }
+
+      // Profile doesn't exist or doesn't have a username - create/update it
+      console.log('Creating/updating Google user profile for:', supabaseUser.id);
 
       // Generate username from first + last name
       const fullName = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '';
@@ -359,20 +368,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       while (true) {
         const { data: existing } = await supabase
           .from('users')
-          .select('username')
+          .select('id, username')
           .eq('username', finalUsername)
           .maybeSingle();
 
-        if (!existing) {
-          break; // Username is available
+        // If username doesn't exist, or it belongs to the current user, it's available
+        if (!existing || existing.id === supabaseUser.id) {
+          break; // Username is available or belongs to current user
         }
         finalUsername = `${username}${counter}`;
         counter++;
         if (counter > 1000) break; // Safety limit
       }
 
-      // Upsert user profile
-      await supabase
+      // Upsert user profile - this will create if doesn't exist, update if exists
+      const { data: upsertData, error: upsertError } = await supabase
         .from('users')
         .upsert({
           id: supabaseUser.id,
@@ -385,9 +395,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           provider: 'google',
         }, {
           onConflict: 'id',
-        });
+        })
+        .select();
+
+      if (upsertError) {
+        console.error('Error upserting Google user profile:', upsertError);
+        throw upsertError;
+      }
+
+      console.log('Successfully created/updated Google user profile:', upsertData);
     } catch (error) {
       console.error('Error ensuring Google user profile:', error);
+      // Don't throw - allow the app to continue even if profile creation fails
+      // The user can still use the app, just without a profile in the users table
     }
   }, []);
 
