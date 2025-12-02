@@ -129,12 +129,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Check for existing Supabase session on mount and verify it matches localStorage
+  // Also handle OAuth callback by cleaning up URL hash after processing
   useEffect(() => {
     let isMounted = true;
     
     const checkSession = async () => {
       try {
+        // Check if we have OAuth callback parameters in the URL hash
+        const hashParams = window.location.hash;
+        const hasOAuthParams = hashParams.includes('access_token') || hashParams.includes('error');
+        
+        // Get session - Supabase will automatically process OAuth callback from hash
         const { data: { session }, error } = await supabase.auth.getSession();
+        
+        // Clean up OAuth callback parameters from URL after Supabase processes them
+        // Do this after getSession() so Supabase has a chance to extract the session from the hash
+        if (hasOAuthParams && typeof window !== 'undefined') {
+          // Use setTimeout to ensure Supabase has processed the hash
+          setTimeout(() => {
+            // Remove hash from URL after Supabase processes it
+            const url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url.toString());
+          }, 100);
+        }
         
         if (error) {
           console.error('Error getting session:', error);
@@ -380,10 +398,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // The auth state change listener will handle setting the user when they return
   const handleGoogleLogin = useCallback(async () => {
     try {
+      // Get the current pathname to redirect back to the same page
+      const redirectPath = window.location.pathname || '/';
+      const redirectTo = `${window.location.origin}${redirectPath}`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`,
+          redirectTo: redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
