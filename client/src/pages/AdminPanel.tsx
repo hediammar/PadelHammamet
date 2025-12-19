@@ -2,15 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { AdminCalendar } from '../components/admin/AdminCalendar';
 import { PlayersManagement } from '../components/admin/PlayersManagement';
+import { JackpotManagement } from '../components/admin/JackpotManagement';
 import { AddReservationModal } from '../components/admin/AddReservationModal';
 import { ReservationDetailModal } from '../components/admin/ReservationDetailModal';
 import { AdminAuthGuard } from '../components/admin/AdminAuthGuard';
 import { supabase } from '../lib/supabase';
-import { Calendar, Users, Plus } from 'lucide-react';
+import { Calendar, Users, Plus, Gift } from 'lucide-react';
 import { parse, format } from 'date-fns';
 import { generatePadelSlots, formatDateLocal } from '../utils/dateHelpers';
 
-type Tab = 'calendar' | 'players';
+type Tab = 'calendar' | 'players' | 'jackpot';
 
 interface CalendarEvent {
   id: string;
@@ -217,6 +218,25 @@ export default function AdminPanel() {
               />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('jackpot')}
+            className={`px-6 py-3 font-semibold transition-colors relative ${
+              activeTab === 'jackpot'
+                ? 'text-[var(--color-padel-green)]'
+                : 'text-white/60 hover:text-white/80'
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              <Gift className="w-5 h-5" />
+              <span>Jackpot Machine</span>
+            </div>
+            {activeTab === 'jackpot' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-padel-green)]"
+              />
+            )}
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -325,8 +345,10 @@ export default function AdminPanel() {
                 </motion.div>
               )}
             </div>
-          ) : (
+          ) : activeTab === 'players' ? (
             <PlayersManagement />
+          ) : (
+            <JackpotManagement />
           )}
         </motion.div>
 
